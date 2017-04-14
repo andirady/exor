@@ -99,18 +99,13 @@ static GtkWidget* new_term(GtkWidget *main_window, GError **error)
 
 GtkCssProvider *css = NULL;
 
-void modify_css(GtkWidget *widget, const gchar *class) {
+void modify_css(GtkWidget *widget) {
     GError *error = NULL;
     if (css == NULL) {
         css = gtk_css_provider_new();
         gtk_css_provider_load_from_data(css,
-                                        "paned.horizontal separator {"
-                                        "  background: #d5d5d0; "
-                                        "}"
-                                        "paned.vertical separator {"
-                                        //"  background: #fa2772; "
-                                        "  background: #93bd18; "
-                                        //"  background: #65cdde; "
+                                        "paned separator {"
+                                        "  background: #656560; "
                                         "}\0",
                                         -1,
                                         &error);
@@ -124,7 +119,6 @@ void modify_css(GtkWidget *widget, const gchar *class) {
     gtk_style_context_add_provider(ctx,
                                    GTK_STYLE_PROVIDER(css),
                                    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    gtk_style_context_add_class(ctx, class);
 }
 
 static void split(GtkWidget *main_window, GtkOrientation orientation)
@@ -157,10 +151,10 @@ static void split(GtkWidget *main_window, GtkOrientation orientation)
         gtk_widget_show_all(paned);
 
         if (orientation == GTK_ORIENTATION_HORIZONTAL) {
-            modify_css(paned, "horizontal");
+            modify_css(paned);
             gtk_paned_set_position(GTK_PANED(paned), alloc.width / 2);
         } else {
-            modify_css(paned, "vertical");
+            modify_css(paned);
             gtk_paned_set_position(GTK_PANED(paned), alloc.height / 2);
         }
 
