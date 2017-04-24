@@ -2,9 +2,9 @@
 
 #define PALETTE_SIZE 16
 
-GdkColor bg;
-GdkColor fg;
-GdkColor palette[PALETTE_SIZE];
+GdkRGBA bg;
+GdkRGBA fg;
+GdkRGBA palette[PALETTE_SIZE];
 PangoFontDescription *font_desc;
 
 enum SplitOrientation {
@@ -17,7 +17,7 @@ static void on_destroy(GtkWidget *widget, gpointer data)
     gtk_main_quit();
 }
 
-static void child_exited(VteTerminal *term, gint status, gpointer data)
+static void on_child_exited(VteTerminal *term, gint status, gpointer data)
 {
     GtkWidget *parent = gtk_widget_get_parent(GTK_WIDGET(term));
     gtk_container_remove(GTK_CONTAINER(parent), GTK_WIDGET(term));
@@ -50,6 +50,17 @@ static void child_exited(VteTerminal *term, gint status, gpointer data)
     if (list == NULL) gtk_main_quit();
 }
 
+static void on_increase_or_decrease_font_size(VteTerminal *term, gpointer data)
+{
+    gdouble font_scale = vte_terminal_get_font_scale(term);
+
+    if (data != NULL) {
+        vte_terminal_set_font_scale(term, font_scale + 0.5);
+    } else {
+        vte_terminal_set_font_scale(term, font_scale - 0.5);
+    }
+}
+
 static void on_terminal_window_title_changed(VteTerminal *term, gpointer data)
 {
     gtk_window_set_title(GTK_WINDOW(data), vte_terminal_get_window_title(term));
@@ -69,20 +80,30 @@ static GtkWidget* new_term(GtkWidget *main_window, GError **error)
     vte_terminal_set_color_foreground(VTE_TERMINAL(vte), &fg);
     vte_terminal_set_color_background(VTE_TERMINAL(vte), &bg);
     //vte_terminal_set_colors(VTE_TERMINAL(vte), &fg, &bg, palette, PALETTE_SIZE);
-    vte_terminal_fork_command_full(VTE_TERMINAL(vte),
-                                   VTE_PTY_DEFAULT,
-                                   getenv("HOME"),
-                                   argv,
-                                   NULL,
-                                   G_SPAWN_DEFAULT,
-                                   NULL,
-                                   NULL,
-                                   &pid,
-                                   error);
+    vte_terminal_spawn_sync(VTE_TERMINAL(vte),
+                            VTE_PTY_DEFAULT,
+                            getenv("HOME"),
+                            argv,
+                            NULL,
+                            G_SPAWN_DEFAULT,
+                            NULL,
+                            NULL,
+                            &pid,
+                            NULL,
+                            error);
 
+    gboolean b = TRUE;
+    g_signal_connect(vte,
+                     "increase-font-size",
+                     G_CALLBACK(on_increase_or_decrease_font_size),
+                     &b);
+    g_signal_connect(vte,
+                     "decrease-font-size",
+                     G_CALLBACK(on_increase_or_decrease_font_size),
+                     NULL);
     g_signal_connect(vte,
                      "child-exited",
-                     G_CALLBACK(child_exited),
+                     G_CALLBACK(on_child_exited),
                      NULL);
     g_signal_connect(vte,
                      "window-title-changed",
@@ -200,22 +221,22 @@ static gboolean paste_clipboard(GtkAccelGroup *sender, gpointer data)
 
 static void setup_palette()
 { 
-    gdk_color_parse("#1B1D1E", &palette[0]);
-    gdk_color_parse("#F92672", &palette[1]);
-    gdk_color_parse("#82B414", &palette[2]);
-    gdk_color_parse("#FD971F", &palette[3]);
-    gdk_color_parse("#56C2D6", &palette[4]);
-    gdk_color_parse("#8C54FE", &palette[5]);
-    gdk_color_parse("#465457", &palette[6]);
-    gdk_color_parse("#CCCCC6", &palette[7]);
-    gdk_color_parse("#505354", &palette[8]);
-    gdk_color_parse("#FF5995", &palette[9]);
-    gdk_color_parse("#B6E354", &palette[10]);
-    gdk_color_parse("#FEED6C", &palette[11]);
-    gdk_color_parse("#8CEDFF", &palette[12]);
-    gdk_color_parse("#9E6FFE", &palette[13]);
-    gdk_color_parse("#899CA1", &palette[14]);
-    gdk_color_parse("#F8F8F2", &palette[15]);
+    gdk_rgba_parse(&palette[0], "#1B1D1E");
+    gdk_rgba_parse(&palette[1], "#F92672");
+    gdk_rgba_parse(&palette[2], "#82B414");
+    gdk_rgba_parse(&palette[3], "#FD971F");
+    gdk_rgba_parse(&palette[4], "#56C2D6");
+    gdk_rgba_parse(&palette[5], "#8C54FE");
+    gdk_rgba_parse(&palette[6], "#465457");
+    gdk_rgba_parse(&palette[7], "#CCCCC6");
+    gdk_rgba_parse(&palette[8], "#505354");
+    gdk_rgba_parse(&palette[9], "#FF5995");
+    gdk_rgba_parse(&palette[10], "#B6E354");
+    gdk_rgba_parse(&palette[11], "#FEED6C");
+    gdk_rgba_parse(&palette[12], "#8CEDFF");
+    gdk_rgba_parse(&palette[13], "#9E6FFE");
+    gdk_rgba_parse(&palette[14], "#899CA1");
+    gdk_rgba_parse(&palette[15], "#F8F8F2");
 }
 
 int main(int argc, char *argv[])
@@ -230,8 +251,8 @@ int main(int argc, char *argv[])
 
     // Settings
     font_desc = pango_font_description_from_string(FONT_SPEC);
-    gdk_color_parse(BACKGROUND_COLOR, &bg);
-    gdk_color_parse(FOREGROUND_COLOR, &fg);
+    gdk_rgba_parse(&bg, BACKGROUND_COLOR);
+    gdk_rgba_parse(&fg, FOREGROUND_COLOR);
     //setup_palette();
 
     win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
