@@ -1,6 +1,7 @@
 #include "config.h"
 
 #define PALETTE_SIZE 16
+#define SCALE_FACTOR 0.25
 
 GdkRGBA bg;
 GdkRGBA fg;
@@ -55,9 +56,9 @@ static void on_increase_or_decrease_font_size(VteTerminal *term, gpointer data)
     gdouble font_scale = vte_terminal_get_font_scale(term);
 
     if (data != NULL) {
-        vte_terminal_set_font_scale(term, font_scale + 0.5);
+        vte_terminal_set_font_scale(term, font_scale + SCALE_FACTOR);
     } else {
-        vte_terminal_set_font_scale(term, font_scale - 0.5);
+        vte_terminal_set_font_scale(term, font_scale - SCALE_FACTOR);
     }
 }
 
